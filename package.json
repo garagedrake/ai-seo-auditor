@@ -1,0 +1,21 @@
+{
+  "name": "ai-seo-auditor",
+  "version": "1.0.0",
+  "description": "Dynamic SEO Analysis Tool based on 2026 guidelines",
+  "main": "src/seo_analyzer.js",
+  "type": "module",
+  "scripts": {
+    "analyze": "node src/seo_analyzer.js"
+  },
+  "keywords": [
+    "seo",
+    "analyzer"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "puppeteer": "^24.40.0"
+  }
+}

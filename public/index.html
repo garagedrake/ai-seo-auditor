@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Analyzer 2026 - Master Domain Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>Crawl History</h2>
+                    <button id="clearHistoryBtn" class="clear-btn" title="Clear all history">🗑️</button>
+                </div>
+                <div class="knowledge-status" id="knowledgeStatus">Loading knowledge base status...</div>
+            </div>
+            <div class="reports-list" id="reportsList"></div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-view">
+            <header>
+                <h1>SEO & GEO <br><span>Domain Analyzer</span></h1>
+                <p>Identifies errors on a single page OR crawls your domain recursively based on 2026 rules.</p>
+            </header>
+            
+            <section class="analyze-section">
+                <form id="analyzeForm">
+                    <div class="input-group">
+                        <input type="url" id="urlInput" placeholder="Ex. https://mydomain.com" required>
+                        <select id="depthSelect" class="depth-select">
+                            <option value="0">Depth 0 (Page Only)</option>
+                            <option value="1">Depth 1 (Page + Direct Links)</option>
+                            <option value="2">Depth 2 (Entire Site)</option>
+                        </select>
+                        <button type="submit" id="analyzeBtn">Start Crawling</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Real-time Terminal Logger -->
+            <div class="terminal-container hidden" id="terminalContainer">
+                <div class="terminal-header">
+                    <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                    Terminal: Crawler active
+                </div>
+                <div class="terminal-body" id="terminalBody"></div>
+            </div>
+
+            <div class="error-container hidden" id="errorContainer"></div>
+
+            <!-- Report result view -->
+            <section class="result-section hidden" id="resultSection">
+                <div class="result-header">
+                    <h2>Master Report: <span id="resUrl"></span></h2>
+                    <span class="res-date" id="resDate"></span>
+                </div>
+
+                <!-- The Master Action Plan Container -->
+                <div class="action-plan-container" id="actionPlanContainer">
+                    <div class="action-plan-header">
+                        <h2>🛠 Domain Action List</h2>
+                        <p>Fix the flaws by priority. Expand the blocks to see specific URLs grouped by Classic and AI SEO.</p>
+                    </div>
+                    
+                    <!-- Accordions by priority -->
+                    <div id="prioHighContainer" class="prio-accordion impact-high"></div>
+                    <div id="prioMediumContainer" class="prio-accordion impact-medium"></div>
+                    <div id="prioLowContainer" class="prio-accordion impact-low"></div>
+                    
+                    <ul class="action-list" id="actionList" style="display:none;"></ul>
+                </div>
+
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
