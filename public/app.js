@@ -10,7 +10,9 @@ const elements = {
     list: document.getElementById('reportsList'),
     status: document.getElementById('knowledgeStatus'),
     actionPlanContainer: document.getElementById('actionPlanContainer'),
-    actionList: document.getElementById('actionList') // keeping for fallback/success message
+    actionList: document.getElementById('actionList'), // keeping for fallback/success message
+    exportBtn: document.getElementById('exportPdfBtn'),
+    pdfError: document.getElementById('pdfErrorMsg')
 };
 
 let eventSource = null;
@@ -165,6 +167,90 @@ elements.form.addEventListener('submit', (e) => {
     };
 });
 
+elements.exportBtn?.addEventListener('click', () => {
+    const btn = elements.exportBtn;
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Generating...';
+    btn.disabled = true;
+
+    const report = window.currentReport;
+    if (!report) return;
+
+    const exportContainer = document.createElement('div');
+    let html = `
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a1a1a; padding: 40px; max-width: 800px; margin: 0 auto;">
+        <h1 style="color: #111827; font-size: 28px; border-bottom: 2px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px;">SEO & GEO Master Report</h1>
+        <div style="margin-bottom: 32px; font-size: 14px; color: #4b5563;">
+            <p style="margin: 4px 0;"><strong>Domain:</strong> ${report.domain}</p>
+            <p style="margin: 4px 0;"><strong>Pages Analyzed:</strong> ${report.pagesAnalyzed}</p>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${new Date(report.date).toLocaleString('en-US')}</p>
+        </div>
+    `;
+
+    const prios = { High: { classic: [], ai: [] }, Medium: { classic: [], ai: [] }, Low: { classic: [], ai: [] } };
+    
+    report.pages.forEach(page => {
+        const classic = page.categories.classicSeo;
+        for(const key in classic) {
+            if(classic[key] && !classic[key].passed) {
+                const impact = classic[key].impact || 'Medium';
+                prios[impact].classic.push({ pageUrl: page.url, title: titles[key], ...classic[key] });
+            }
+        }
+
+        const ai = page.categories.aiSeo;
+        for(const key in ai) {
+            if(ai[key] && !ai[key].passed) {
+                const impact = ai[key].impact || 'Medium';
+                prios[impact].ai.push({ pageUrl: page.url, title: titles[key], ...ai[key] });
+            }
+        }
+    });
+
+    Object.entries(prios).forEach(([prioLevel, groups]) => {
+        if (groups.classic.length === 0 && groups.ai.length === 0) return;
+        
+        const colors = { High: '#dc2626', Medium: '#d97706', Low: '#2563eb' };
+        html += `<h2 style="color: ${colors[prioLevel]}; font-size: 20px; border-bottom: 2px solid ${colors[prioLevel]}40; padding-bottom: 8px; margin-top: 40px; margin-bottom: 20px;">${prioLevel.toUpperCase()} PRIORITY</h2>`;
+        
+        ['classic', 'ai'].forEach(type => {
+            if (groups[type].length > 0) {
+                html += `<h3 style="color: #374151; font-size: 16px; margin-top: 24px; margin-bottom: 16px;">${type === 'classic' ? '📌 Classic SEO' : '🤖 GEO & AI Overviews (2026)'}</h3>`;
+                groups[type].forEach(item => {
+                    let pathLabel = item.pageUrl;
+                    try { pathLabel = new URL(item.pageUrl).pathname || '/'; } catch(e){}
+                    html += `
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 20px; margin-bottom: 16px; border-radius: 8px; page-break-inside: avoid;">
+                        <div style="font-size: 13px; color: #6b7280; font-family: monospace; margin-bottom: 8px;">📍 ${pathLabel}</div>
+                        <div style="font-weight: 600; font-size: 16px; color: #111827; margin-bottom: 12px; line-height: 1.4;">${item.title} - ${item.message}</div>
+                        <div style="color: #374151; font-size: 14px; line-height: 1.5; margin-bottom: 12px;"><strong>⚙️ Fix:</strong> ${item.recommendation}</div>
+                        <a href="${item.sourceUrl}" style="color: #2563eb; font-size: 13px; text-decoration: none;">🔗 Read more in official documentation</a>
+                    </div>`;
+                });
+            }
+        });
+    });
+
+    html += `</div>`;
+    exportContainer.innerHTML = html;
+
+    const opt = {
+        margin:       0.2,
+        filename:     `SEO_Report_${report.domain.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(exportContainer).toPdf().get('pdf').then((pdf) => {
+        window.open(pdf.output('bloburl'), '_blank');
+    }).finally(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    });
+});
+
 const titles = {
     title: "Title Tag",
     metaDescription: "Meta Description",
@@ -178,6 +264,7 @@ const titles = {
 };
 
 function renderReport(report) {
+    window.currentReport = report;
     document.getElementById('resUrl').textContent = `${report.domain} [${report.pagesAnalyzed} pages]`;
     document.getElementById('resDate').textContent = new Date(report.date).toLocaleString('sv-SE');
 
@@ -203,6 +290,15 @@ function renderReport(report) {
 
     const hasErrors = Object.values(prios).some(p => p.classic.length > 0 || p.ai.length > 0);
     elements.actionPlanContainer.classList.remove('hidden');
+
+    if (report.pagesAnalyzed > 15) {
+        elements.exportBtn.style.display = 'none';
+        elements.pdfError.classList.remove('hidden');
+    } else {
+        elements.exportBtn.style.display = 'inline-block';
+        elements.pdfError.classList.add('hidden');
+        elements.exportBtn.dataset.domain = report.domain;
+    }
 
     if (hasErrors) {
         elements.actionList.style.display = 'none'; // hiding fallback
