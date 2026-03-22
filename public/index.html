@@ -6,6 +6,7 @@
     <title>SEO Analyzer 2026 - Master Domain Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -62,9 +63,15 @@
 
                 <!-- The Master Action Plan Container -->
                 <div class="action-plan-container" id="actionPlanContainer">
-                    <div class="action-plan-header">
-                        <h2>🛠 Domain Action List</h2>
-                        <p>Fix the flaws by priority. Expand the blocks to see specific URLs grouped by Classic and AI SEO.</p>
+                    <div class="action-plan-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <h2>🛠 Domain Action List</h2>
+                            <p>Fix the flaws by priority. Expand the blocks to see specific URLs grouped by Classic and AI SEO.</p>
+                        </div>
+                        <div style="text-align: right; margin-left:16px; flex-shrink:0;">
+                            <button id="exportPdfBtn" class="export-btn" style="display:none;">📄 Export to PDF</button>
+                            <p id="pdfErrorMsg" class="hidden" style="color:var(--error); font-size:0.85rem; margin-top:8px; max-width: 200px;">Site is too large to generate a PDF.</p>
+                        </div>
                     </div>
                     
                     <!-- Accordions by priority -->
