@@ -45,9 +45,18 @@ app.get('/api/analyze-stream', async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: 'progress', message: msg })}\n\n`);
     };
 
+    const controller = new AbortController();
+    req.on('close', () => {
+        controller.abort();
+    });
+
     try {
-        const report = await analyzeUrl(url, maxDepth, sendProgress);
+        const report = await analyzeUrl(url, maxDepth, sendProgress, controller.signal);
         
+        if (controller.signal.aborted) {
+            return; // Don't save or send result if aborted
+        }
+
         const reportPath = path.join(reportsDir, `${report.id}.json`);
         fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 

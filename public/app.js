@@ -12,7 +12,8 @@ const elements = {
     actionPlanContainer: document.getElementById('actionPlanContainer'),
     actionList: document.getElementById('actionList'), // keeping for fallback/success message
     exportBtn: document.getElementById('exportPdfBtn'),
-    pdfError: document.getElementById('pdfErrorMsg')
+    pdfError: document.getElementById('pdfErrorMsg'),
+    stopBtn: document.getElementById('stopBtn')
 };
 
 let eventSource = null;
@@ -20,6 +21,28 @@ let eventSource = null;
 document.addEventListener('DOMContentLoaded', () => {
     fetchKnowledgeStatus();
     fetchReports();
+});
+
+function resetUI() {
+    elements.btn.disabled = false;
+    elements.stopBtn.classList.add('hidden');
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
+}
+
+elements.stopBtn.addEventListener('click', () => {
+    if (eventSource) {
+        const div = document.createElement('div');
+        div.className = 'terminal-line';
+        div.style.color = 'var(--error)';
+        div.textContent = 'Crawl stopped by user.';
+        elements.terminalBody.appendChild(div);
+        elements.terminalBody.scrollTop = elements.terminalBody.scrollHeight;
+        
+        resetUI();
+    }
 });
 
 async function fetchKnowledgeStatus() {
@@ -113,7 +136,9 @@ elements.form.addEventListener('submit', (e) => {
     elements.result.classList.add('hidden');
     elements.terminal.classList.remove('hidden');
     elements.terminalBody.innerHTML = '';
+    
     elements.btn.disabled = true;
+    elements.stopBtn.classList.remove('hidden');
 
     if (eventSource) eventSource.close();
 
@@ -123,8 +148,7 @@ elements.form.addEventListener('submit', (e) => {
         const data = JSON.parse(event.data);
 
         if (data.error) {
-            eventSource.close();
-            elements.btn.disabled = false;
+            resetUI();
             elements.terminal.classList.add('hidden');
             elements.error.classList.remove('hidden');
             elements.error.innerHTML = `<strong>Error:</strong> <br>${data.error}`;
@@ -143,15 +167,13 @@ elements.form.addEventListener('submit', (e) => {
             elements.terminalBody.scrollTop = elements.terminalBody.scrollHeight;
         } 
         else if (data.type === 'result') {
-            eventSource.close();
-            elements.btn.disabled = false;
+            resetUI();
             elements.terminal.classList.add('hidden');
             renderReport(data.report);
             fetchReports(); 
         } 
         else if (data.type === 'error') {
-            eventSource.close();
-            elements.btn.disabled = false;
+            resetUI();
             elements.terminal.classList.add('hidden');
             elements.error.classList.remove('hidden');
             elements.error.innerHTML = `<strong>Analysis crashed:</strong> <br>${data.error}`;
@@ -159,8 +181,7 @@ elements.form.addEventListener('submit', (e) => {
     };
 
     eventSource.onerror = (err) => {
-        eventSource.close();
-        elements.btn.disabled = false;
+        resetUI();
         elements.terminal.classList.add('hidden');
         elements.error.classList.remove('hidden');
         elements.error.innerHTML = `<strong>Network error:</strong> Could not connect to the server process.`;

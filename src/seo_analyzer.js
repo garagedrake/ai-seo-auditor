@@ -27,7 +27,7 @@ export function validateKnowledgeBase() {
     return { isOutdated, daysOld };
 }
 
-export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}) {
+export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, signal = null) {
     let browser;
     const visited = new Set();
     const queue = [{ url: startUrl, depth: 0 }];
@@ -40,6 +40,10 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}) 
         const startOrigin = new URL(startUrl).origin;
 
         while (queue.length > 0 && visited.size < MAX_PAGES) {
+            if (signal && signal.aborted) {
+                onProgress("Crawl aborted by user. Cleaning up...");
+                break;
+            }
             const current = queue.shift();
             
             // Clear hashes from URL (e.g. #section) to avoid crawling the same page
