@@ -17,6 +17,8 @@ const elements = {
 };
 
 let eventSource = null;
+// Track whether the user manually stopped the crawl to suppress false onerror events
+let userStopped = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchKnowledgeStatus();
@@ -34,13 +36,13 @@ function resetUI() {
 
 elements.stopBtn.addEventListener('click', () => {
     if (eventSource) {
+        userStopped = true;
         const div = document.createElement('div');
         div.className = 'terminal-line';
         div.style.color = 'var(--error)';
         div.textContent = 'Crawl stopped by user.';
         elements.terminalBody.appendChild(div);
         elements.terminalBody.scrollTop = elements.terminalBody.scrollHeight;
-        
         resetUI();
     }
 });
@@ -115,12 +117,15 @@ async function fetchReports() {
 
 document.addEventListener('click', async (e) => {
     if (e.target.id === 'clearHistoryBtn') {
-        if(confirm('Are you sure you want to clear all history?')) {
+        if (confirm('Are you sure you want to clear all history?')) {
             try {
                 await fetch('/api/reports', { method: 'DELETE' });
                 fetchReports();
                 elements.result.classList.add('hidden');
-            } catch(e) {}
+            } catch (err) {
+                console.error('Failed to clear history:', err);
+                alert('Could not clear history. Is the server running?');
+            }
         }
     }
 });
@@ -132,11 +137,11 @@ elements.form.addEventListener('submit', (e) => {
     const url = elements.input.value.trim();
     if(!url) return;
 
+    userStopped = false;
     elements.error.classList.add('hidden');
     elements.result.classList.add('hidden');
     elements.terminal.classList.remove('hidden');
     elements.terminalBody.innerHTML = '';
-    
     elements.btn.disabled = true;
     elements.stopBtn.classList.remove('hidden');
 
@@ -145,7 +150,13 @@ elements.form.addEventListener('submit', (e) => {
     eventSource = new EventSource(`/api/analyze-stream?url=${encodeURIComponent(url)}&depth=${elements.depth.value}`);
 
     eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+        let data;
+        try {
+            data = JSON.parse(event.data);
+        } catch (parseErr) {
+            console.error('Received malformed SSE data:', event.data);
+            return;
+        }
 
         if (data.error) {
             resetUI();
@@ -159,19 +170,19 @@ elements.form.addEventListener('submit', (e) => {
             const div = document.createElement('div');
             div.className = 'terminal-line blinking';
             div.textContent = data.message;
-            
+
             const lines = elements.terminalBody.querySelectorAll('.terminal-line');
             lines.forEach(l => l.classList.remove('blinking'));
 
             elements.terminalBody.appendChild(div);
             elements.terminalBody.scrollTop = elements.terminalBody.scrollHeight;
-        } 
+        }
         else if (data.type === 'result') {
             resetUI();
             elements.terminal.classList.add('hidden');
             renderReport(data.report);
-            fetchReports(); 
-        } 
+            fetchReports();
+        }
         else if (data.type === 'error') {
             resetUI();
             elements.terminal.classList.add('hidden');
@@ -180,7 +191,9 @@ elements.form.addEventListener('submit', (e) => {
         }
     };
 
-    eventSource.onerror = (err) => {
+    eventSource.onerror = () => {
+        // Suppress error display if the user deliberately stopped the crawl
+        if (userStopped) return;
         resetUI();
         elements.terminal.classList.add('hidden');
         elements.error.classList.remove('hidden');
