@@ -31,14 +31,16 @@
             
             <section class="analyze-section">
                 <form id="analyzeForm">
-                    <div class="input-group">
-                        <input type="url" id="urlInput" placeholder="Ex. https://mydomain.com" required>
-                        <select id="depthSelect" class="depth-select">
-                            <option value="0">Depth 0 (Page Only)</option>
-                            <option value="1">Depth 1 (Page + Direct Links)</option>
-                            <option value="2">Depth 2 (Entire Site)</option>
-                        </select>
-                        <button type="submit" id="analyzeBtn">Start Crawling</button>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <input type="url" id="urlInput" placeholder="Ex. https://mydomain.com" required>
+                            <select id="depthSelect" class="depth-select">
+                                <option value="0">Depth 0 (Page Only)</option>
+                                <option value="1">Depth 1 (Page + Direct Links)</option>
+                                <option value="2">Depth 2 (Entire Site)</option>
+                            </select>
+                            <button type="submit" id="analyzeBtn">Start Crawling</button>
+                        </div>
                         <button type="button" id="stopBtn" class="stop-btn hidden">Stop Crawling</button>
                     </div>
                 </form>
