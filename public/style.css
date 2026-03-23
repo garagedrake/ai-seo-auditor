@@ -58,14 +58,14 @@ input[type="url"]::placeholder { color: #64748b; }
 .depth-select { background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text); padding: 0 16px; border-radius: 12px; outline: none; font-size: 1rem; cursor: pointer; transition: all 0.2s;}
 .depth-select:focus { border-color: var(--primary); }
 .depth-select option { background: var(--bg-color); color: var(--text); padding: 10px; }
-button { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 0 36px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+button { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 0 24px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; white-space: nowrap; flex-shrink: 0; }
 button:hover { box-shadow: 0 0 24px rgba(99,102,241,0.5); transform: scale(1.02) translateY(-1px); }
 button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .export-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
 .export-btn:hover { background: rgba(255, 255, 255, 0.2); box-shadow:none; transform:scale(1.02); }
 
-.stop-btn { background: linear-gradient(135deg, var(--error), #b91c1c); margin-left: 8px; }
+.stop-btn { background: linear-gradient(135deg, var(--error), #b91c1c); }
 .stop-btn:hover { box-shadow: 0 0 24px rgba(239, 68, 68, 0.4); transform: scale(1.02) translateY(-1px); }
 
 /* Terminal */
