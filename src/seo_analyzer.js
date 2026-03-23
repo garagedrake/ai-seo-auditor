@@ -27,12 +27,22 @@ export function validateKnowledgeBase() {
     return { isOutdated, daysOld };
 }
 
+/**
+ * Crawls startUrl up to maxDepth levels deep and returns a structured SEO report.
+ * @param {string} startUrl - The URL to start crawling from.
+ * @param {number} maxDepth - Maximum BFS depth (0 = single page only).
+ * @param {function} onProgress - Callback for real-time progress messages.
+ * @param {AbortSignal|null} signal - Optional signal to cancel the crawl.
+ */
 export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, signal = null) {
     let browser;
     const visited = new Set();
     const queue = [{ url: startUrl, depth: 0 }];
     const pagesResults = [];
-    const MAX_PAGES = 100; // Increased limit for massive domains based on feedback
+    const MAX_PAGES = 100;
+
+    // Cache the llms.txt check – it only needs to be fetched once per domain
+    let hasLlmsTxt = null;
 
     try {
         onProgress(`Launching Headless Crawler... (Goal: Depth ${maxDepth}, Max ${MAX_PAGES} pages)`);
@@ -40,28 +50,31 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
         const startOrigin = new URL(startUrl).origin;
 
         while (queue.length > 0 && visited.size < MAX_PAGES) {
+            // Check for user-initiated cancellation at the start of each iteration
             if (signal && signal.aborted) {
-                onProgress("Crawl aborted by user. Cleaning up...");
+                onProgress('Crawl aborted by user. Cleaning up...');
                 break;
             }
+
             const current = queue.shift();
-            
-            // Clear hashes from URL (e.g. #section) to avoid crawling the same page
+
+            // Strip URL fragments (#section) to avoid re-analysing the same page
             let crawlUrl = current.url;
             try {
                 const u = new URL(crawlUrl);
                 u.hash = '';
                 crawlUrl = u.href;
-            } catch(e) { continue; }
+            } catch (e) { continue; }
 
-            // Avoid duplicate page visits
+            // Skip already-visited pages
             if (visited.has(crawlUrl)) continue;
             visited.add(crawlUrl);
 
             onProgress(`[Depth ${current.depth}] Analyzing: ${crawlUrl.substring(startOrigin.length) || '/'}`);
-            
+
             const page = await browser.newPage();
-            page.setDefaultNavigationTimeout(20000); 
+            // setDefaultNavigationTimeout is synchronous (void), no await needed
+            page.setDefaultNavigationTimeout(20000);
 
             let response;
             try {
@@ -85,7 +98,7 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 const h1s = document.querySelectorAll('h1');
                 const canonicalEl = document.querySelector('link[rel="canonical"]');
                 const canonical = canonicalEl ? canonicalEl.href : null;
-                
+
                 const images = document.querySelectorAll('img');
                 let imagesMissingAlt = 0;
                 images.forEach(img => {
@@ -94,7 +107,7 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                     }
                 });
 
-                // Pick internal links for breadth-first crawling
+                // Collect internal links for breadth-first crawling
                 const links = Array.from(document.querySelectorAll('a[href]'))
                     .map(a => a.href)
                     .filter(href => href.startsWith(origin));
@@ -110,7 +123,7 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 };
             }, startOrigin);
 
-            // 2. AI SEO / SGE
+            // 2. AI SEO / SGE signals
             const aiSeo = await page.evaluate(() => {
                 const text = document.body.innerText.toLowerCase();
                 const hasTldr = text.includes('tl;dr') || text.includes('summary') || text.includes('sammanfattning');
@@ -120,17 +133,19 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 return { hasTldr, hasPersonalExperience, domNodesCount, scriptsCount };
             });
 
-            // 3. LLMs.txt check (Done quickly for origin, technically only needs to be done once)
-            const llmsUrl = `${startOrigin}/llms.txt`;
-            let hasLlmsTxt = false;
-            try {
-                const llmsRes = await fetch(llmsUrl);
-                hasLlmsTxt = llmsRes.ok;
-            } catch (e) { hasLlmsTxt = false; }
+            // 3. llms.txt check – cached after first successful fetch (domain-level, not per-page)
+            if (hasLlmsTxt === null) {
+                try {
+                    const llmsRes = await fetch(`${startOrigin}/llms.txt`);
+                    hasLlmsTxt = llmsRes.ok;
+                } catch (e) {
+                    hasLlmsTxt = false;
+                }
+            }
 
             await page.close();
 
-            // Add new unique links to the queue if we haven't reached max depth
+            // Enqueue child links if we haven't reached max depth
             if (current.depth < maxDepth) {
                 const uniqueLinks = [...new Set(classicSeo.internalLinks)];
                 for (const link of uniqueLinks) {
@@ -140,7 +155,7 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 }
             }
 
-            pagesResults.push(generatePageData(crawlUrl, classicSeo, aiSeo, hasLlmsTxt));
+            pagesResults.push(generatePageData(crawlUrl, classicSeo, aiSeo, hasLlmsTxt ?? false));
         }
 
         await browser.close();
@@ -157,7 +172,7 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
 
     } catch (error) {
         if (browser) await browser.close();
-        throw new Error(`${error.message}`);
+        throw new Error(error.message);
     }
 }
 
