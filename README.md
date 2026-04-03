@@ -1,20 +1,20 @@
 # SEO Domain Analyzer
 
-Ett analysverktyg skrivet i Node.js för utvärdering av webbplatser utifrån teknisk prestanda (Core Web Vitals) och heuristiska markörer för LLM-läsbarhet (SGE/GEO). Verktyget utför en rekursiv genomsökning via Puppeteer och levererar en prioriterad åtgärdslista över SSE.
+An analysis tool written in Node.js for evaluating websites based on technical performance (Core Web Vitals) and heuristic markers for LLM readability (SGE/GEO). The tool performs a recursive crawl via Puppeteer and delivers a prioritized action list over SSE.
 
-## Funktioner
-* **Rekursiv genomsökning:** Utför Breadth-First Search (BFS) utifrån angivet djup för att analysera interna sidor.
-* **Åtgärdsrapport:** Sammanställer tekniska brister och avvikelser i sidstruktur från samtliga genomsökta URL:er, sorterade efter prioritet.
-* **Terminalvy:** Strömmar systemloggar direkt i gränssnittet under körning.
-* **Heuristisk AI-analys:** Utvärderar förekomst av LLM-specifika strukturer (`llms.txt`), DOM-komplexitet samt textuella markörer för "Atomic Answers" och "Information Gain". *Observera att analysen av textinnehåll sker via nyckelordsheuristik och inte genom semantisk utvärdering via externt API.*
-* **Historik:** Sparar tidigare körningar lokalt, grupperade per domän.
+## Features
+* **Recursive Crawling:** Performs Breadth-First Search (BFS) based on the specified depth to analyze internal pages.
+* **Action Report:** Compiles technical flaws and structural deviations from all crawled URLs, sorted by priority.
+* **Terminal View:** Streams system logs directly in the interface during execution.
+* **Heuristic AI Analysis:** Evaluates the presence of LLM-specific structures (`llms.txt`), DOM complexity, and textual markers for "Atomic Answers" and "Information Gain". *Note that text content analysis is performed via keyword heuristics and not through semantic evaluation via an external API.*
+* **History:** Saves previous runs locally, grouped by domain.
 
-## Installation & Körning
+## Installation & Execution
 
-Kräver Node.js.
+Requires Node.js.
 
 ```bash
-git clone [https://github.com/your-username/ai-seo-auditor.git](https://github.com/your-username/ai-seo-auditor.git)
+git clone [https://github.com/garagedrake/ai-seo-auditor.git](https://github.com/garagedrake/ai-seo-auditor.git)
 cd ai-seo-auditor
 npm install
 node server.js

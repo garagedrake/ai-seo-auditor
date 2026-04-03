@@ -13,7 +13,7 @@ export function validateKnowledgeBase() {
         throw new Error('Knowledge base missing: ' + knowledgePath);
     }
     const content = fs.readFileSync(knowledgePath, 'utf8');
-    const dateMatch = content.match(/Senast uppdaterad:\s*(\d{4}-\d{2}-\d{2})/i);
+    const dateMatch = content.match(/Last updated:\s*(\d{4}-\d{2}-\d{2})/i);
     let isOutdated = false;
     let daysOld = 0;
 
@@ -41,7 +41,6 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
     const pagesResults = [];
     const MAX_PAGES = 100;
 
-    // Cache the llms.txt check – it only needs to be fetched once per domain
     let hasLlmsTxt = null;
 
     try {
@@ -50,7 +49,6 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
         const startOrigin = new URL(startUrl).origin;
 
         while (queue.length > 0 && visited.size < MAX_PAGES) {
-            // Check for user-initiated cancellation at the start of each iteration
             if (signal && signal.aborted) {
                 onProgress('Crawl aborted by user. Cleaning up...');
                 break;
@@ -58,7 +56,6 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
 
             const current = queue.shift();
 
-            // Strip URL fragments (#section) to avoid re-analysing the same page
             let crawlUrl = current.url;
             try {
                 const u = new URL(crawlUrl);
@@ -66,14 +63,12 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 crawlUrl = u.href;
             } catch (e) { continue; }
 
-            // Skip already-visited pages
             if (visited.has(crawlUrl)) continue;
             visited.add(crawlUrl);
 
             onProgress(`[Depth ${current.depth}] Analyzing: ${crawlUrl.substring(startOrigin.length) || '/'}`);
 
             const page = await browser.newPage();
-            // setDefaultNavigationTimeout is synchronous (void), no await needed
             page.setDefaultNavigationTimeout(20000);
 
             let response;
@@ -90,7 +85,6 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 continue;
             }
 
-            // 1. Classic SEO & Link extraction
             const classicSeo = await page.evaluate((origin) => {
                 const title = document.title;
                 const metaDescEl = document.querySelector('meta[name="description"]');
@@ -107,7 +101,6 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                     }
                 });
 
-                // Collect internal links for breadth-first crawling
                 const links = Array.from(document.querySelectorAll('a[href]'))
                     .map(a => a.href)
                     .filter(href => href.startsWith(origin));
@@ -123,17 +116,15 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
                 };
             }, startOrigin);
 
-            // 2. AI SEO / SGE signals
             const aiSeo = await page.evaluate(() => {
                 const text = document.body.innerText.toLowerCase();
-                const hasTldr = text.includes('tl;dr') || text.includes('summary') || text.includes('sammanfattning');
-                const hasPersonalExperience = text.includes('testade') || text.includes('vår forskning') || text.includes('our research') || text.includes('i tested');
+                const hasTldr = text.includes('tl;dr') || text.includes('summary') || text.includes('key takeaways');
+                const hasPersonalExperience = text.includes('we tested') || text.includes('our research') || text.includes('i tested') || text.includes('our experience');
                 const domNodesCount = document.querySelectorAll('*').length;
                 const scriptsCount = document.querySelectorAll('script').length;
                 return { hasTldr, hasPersonalExperience, domNodesCount, scriptsCount };
             });
 
-            // 3. llms.txt check – cached after first successful fetch (domain-level, not per-page)
             if (hasLlmsTxt === null) {
                 try {
                     const llmsRes = await fetch(`${startOrigin}/llms.txt`);
@@ -145,7 +136,6 @@ export async function analyzeUrl(startUrl, maxDepth = 0, onProgress = () => {}, 
 
             await page.close();
 
-            // Enqueue child links if we haven't reached max depth
             if (current.depth < maxDepth) {
                 const uniqueLinks = [...new Set(classicSeo.internalLinks)];
                 for (const link of uniqueLinks) {
@@ -183,69 +173,69 @@ function generatePageData(url, classic, ai, hasLlmsTxt) {
             classicSeo: {
                 title: {
                     passed: classic.title && classic.title.length >= 30 && classic.title.length <= 65,
-                    message: classic.title ? `Title: ${classic.title} (${classic.title.length} tecken).` : 'Kritisk brist: Sidan saknar <title> eller är för kort.',
+                    message: classic.title ? `Title: ${classic.title} (${classic.title.length} characters).` : 'Critical flaw: Page lacks <title> or is too short.',
                     impact: "High",
-                    recommendation: "Skriv en unik och beskrivande <title>-tagg på 50-60 tecken.",
+                    recommendation: "Write a unique and descriptive <title> tag of 50-60 characters.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/title-link"
                 },
                 metaDescription: {
                     passed: classic.metaDesc && classic.metaDesc.length >= 70 && classic.metaDesc.length <= 160,
-                    message: classic.metaDesc ? `Meta Description OK (${classic.metaDesc.length} tecken).` : 'Meta Description saknas eller avviker från optimal längd.',
+                    message: classic.metaDesc ? `Meta Description OK (${classic.metaDesc.length} characters).` : 'Meta Description missing or deviates from optimal length.',
                     impact: "Low",
-                    recommendation: "Skriv en <meta name='description'>-tagg på max 160 tecken för att öka CTR i sökresultatet.",
+                    recommendation: "Write a <meta name='description'> tag of max 160 characters to increase CTR in search results.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/snippet"
                 },
                 h1: {
                     passed: classic.h1Count === 1,
-                    message: classic.h1Count === 1 ? 'Exakt en H1-rubrik hittades.' : `Felaktig hierarki. Sidan har ${classic.h1Count} st H1-rubriker.`,
+                    message: classic.h1Count === 1 ? 'Exactly one H1 heading found.' : `Incorrect hierarchy. Page has ${classic.h1Count} H1 headings.`,
                     impact: "High",
-                    recommendation: "Säkerställ att undersidan har exakt EN (1) <H1>-rubrik.",
+                    recommendation: "Ensure the subpage has exactly ONE (1) <H1> heading.",
                     sourceUrl: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide#heading-tags"
                 },
                 canonical: {
                     passed: !!classic.canonical,
-                    message: classic.canonical ? 'Canonical-länk implementerad.' : 'Canonical-länk saknas.',
+                    message: classic.canonical ? 'Canonical link implemented.' : 'Canonical link missing.',
                     impact: "High",
-                    recommendation: "Implementera <link rel='canonical' href='...'> i sidans <head> för att undvika duplicerat innehåll.",
+                    recommendation: "Implement <link rel='canonical' href='...'> in the page's <head> to avoid duplicate content.",
                     sourceUrl: "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls"
                 },
                 imagesAlt: {
                     passed: classic.imagesMissingAlt === 0,
-                    message: classic.imagesMissingAlt === 0 ? 'Alla bilder har alt-attribut.' : `${classic.imagesMissingAlt} av ${classic.totalImages} bilder saknar alt-attribut.`,
+                    message: classic.imagesMissingAlt === 0 ? 'All images have alt attributes.' : `${classic.imagesMissingAlt} of ${classic.totalImages} images missing alt attributes.`,
                     impact: "Medium",
-                    recommendation: "Förse alla <img/>-taggar med alt-attribut för tillgänglighet och bildsök.",
+                    recommendation: "Provide all <img/> tags with alt attributes for accessibility and image search.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/google-images"
                 }
             },
             aiSeo: {
                 atomicAnswers: {
                     passed: ai.hasTldr,
-                    message: ai.hasTldr ? 'Möjlig koncis summering hittad.' : 'Saknar tydlig struktur för Atomic Answers.',
+                    message: ai.hasTldr ? 'Possible concise summary found.' : 'Lacks clear structure for Atomic Answers.',
                     impact: "High",
-                    recommendation: "Ingen koncis summering (ex. TL;DR) identifierades i dokumentets struktur. SGE-modeller prioriterar innehåll där direkta svar enkelt kan extraheras. (Obs: Bedömningen bygger på textheuristik, kräver manuell granskning).",
+                    recommendation: "No concise summary (e.g., TL;DR) was identified in the upper structure of the document. SGE models prioritize content where direct answers can be easily extracted. (Note: Assessment is based on text heuristics, requires manual review).",
                     sourceUrl: "https://searchengineland.com/mastering-generative-engine-optimization-in-2026-full-guide-469142"
                 },
                 informationGain: {
                     passed: ai.hasPersonalExperience,
-                    message: ai.hasPersonalExperience ? 'Markörer för Information Gain funna.' : 'Låg sannolikhet för Information Gain.',
+                    message: ai.hasPersonalExperience ? 'Markers for Information Gain found.' : 'Low probability of Information Gain.',
                     impact: "High",
-                    recommendation: "Inga lexikala markörer för förstahandserfarenhet eller unik data identifierades. Texten bör demonstrera faktisk expertis och inte enbart summera befintlig fakta. (Obs: Bedömningen bygger på textheuristik, kräver manuell granskning).",
+                    recommendation: "No lexical markers for first-hand experience or unique data were identified. The text should demonstrate actual expertise and not merely summarize existing facts. (Note: Assessment is based on text heuristics, requires manual review).",
                     sourceUrl: "https://developers.google.com/search/blog/2026/02/discover-core-update"
                 },
                 llmAccessibility: {
                     passed: hasLlmsTxt,
-                    message: hasLlmsTxt ? 'llms.txt existerar i roten.' : 'llms.txt saknas.',
+                    message: hasLlmsTxt ? 'llms.txt exists in root.' : 'llms.txt missing.',
                     impact: "Low",
-                    recommendation: "Placera en llms.txt i domänens rotkatalog för att ge instruktioner till AI-crawlers (ex. Perplexity/OpenAI).",
+                    recommendation: "Place an llms.txt in the domain's root directory to provide instructions to AI crawlers (e.g., Perplexity/OpenAI).",
                     sourceUrl: "https://moz.com/blog/2026-seo-trends-predictions-from-20-experts"
                 },
                 technicalRendering: {
                     passed: ai.domNodesCount <= 1500,
                     domNodes: ai.domNodesCount,
                     scripts: ai.scriptsCount,
-                    message: ai.domNodesCount <= 1500 ? `DOM-storlek OK (${ai.domNodesCount} noder).` : `DOM överstiger rekommenderad gräns (${ai.domNodesCount} noder).`,
+                    message: ai.domNodesCount <= 1500 ? `DOM size OK (${ai.domNodesCount} nodes).` : `DOM exceeds recommended limit (${ai.domNodesCount} nodes).`,
                     impact: "Medium",
-                    recommendation: "Reducera antalet DOM-noder till under 1500. En lättviktig struktur påskyndar AI-modellers rendering och extrahering av innehåll.",
+                    recommendation: "Reduce the number of DOM nodes to below 1500. A lightweight structure accelerates AI models' rendering and extraction of content.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/core-web-vitals"
                 }
             }
