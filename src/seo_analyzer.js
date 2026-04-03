@@ -183,69 +183,69 @@ function generatePageData(url, classic, ai, hasLlmsTxt) {
             classicSeo: {
                 title: {
                     passed: classic.title && classic.title.length >= 30 && classic.title.length <= 65,
-                    message: classic.title ? `Title: ${classic.title} (${classic.title.length} characters).` : 'Critical flaw: Page lacks <title> or is extremely short.',
+                    message: classic.title ? `Title: ${classic.title} (${classic.title.length} tecken).` : 'Kritisk brist: Sidan saknar <title> eller är för kort.',
                     impact: "High",
-                    recommendation: "Write a unique and descriptive <title> tag of 50-60 characters. Fundamental for all existing SEO and SGE.",
+                    recommendation: "Skriv en unik och beskrivande <title>-tagg på 50-60 tecken.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/title-link"
                 },
                 metaDescription: {
                     passed: classic.metaDesc && classic.metaDesc.length >= 70 && classic.metaDesc.length <= 160,
-                    message: classic.metaDesc ? `Meta Description OK (${classic.metaDesc.length} characters).` : 'Meta Description missing or misses optimal CTR length.',
+                    message: classic.metaDesc ? `Meta Description OK (${classic.metaDesc.length} tecken).` : 'Meta Description saknas eller avviker från optimal längd.',
                     impact: "Low",
-                    recommendation: "Write a <meta name='description'> tag of max 160 characters that attracts clicks out on Google's search page.",
+                    recommendation: "Skriv en <meta name='description'>-tagg på max 160 tecken för att öka CTR i sökresultatet.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/snippet"
                 },
                 h1: {
                     passed: classic.h1Count === 1,
-                    message: classic.h1Count === 1 ? 'Exactly one H1 heading found.' : `Incorrect hierarchy. Page has ${classic.h1Count} H1 headings.`,
+                    message: classic.h1Count === 1 ? 'Exakt en H1-rubrik hittades.' : `Felaktig hierarki. Sidan har ${classic.h1Count} st H1-rubriker.`,
                     impact: "High",
-                    recommendation: "Ensure the subpage has exactly ONE (1) <H1> heading at the top.",
+                    recommendation: "Säkerställ att undersidan har exakt EN (1) <H1>-rubrik.",
                     sourceUrl: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide#heading-tags"
                 },
                 canonical: {
                     passed: !!classic.canonical,
-                    message: classic.canonical ? 'Canonical link protects against duplicates.' : 'Canonical link missing.',
+                    message: classic.canonical ? 'Canonical-länk implementerad.' : 'Canonical-länk saknas.',
                     impact: "High",
-                    recommendation: "Implement <link rel='canonical' href='...'> in the page's <head>.",
+                    recommendation: "Implementera <link rel='canonical' href='...'> i sidans <head> för att undvika duplicerat innehåll.",
                     sourceUrl: "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls"
                 },
                 imagesAlt: {
                     passed: classic.imagesMissingAlt === 0,
-                    message: classic.imagesMissingAlt === 0 ? 'All images are fine.' : `${classic.imagesMissingAlt} of ${classic.totalImages} images missing alt attribute.`,
+                    message: classic.imagesMissingAlt === 0 ? 'Alla bilder har alt-attribut.' : `${classic.imagesMissingAlt} av ${classic.totalImages} bilder saknar alt-attribut.`,
                     impact: "Medium",
-                    recommendation: "Mark all <img/> with alt attributes for Image search ranking and machine learning.",
+                    recommendation: "Förse alla <img/>-taggar med alt-attribut för tillgänglighet och bildsök.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/google-images"
                 }
             },
             aiSeo: {
                 atomicAnswers: {
                     passed: ai.hasTldr,
-                    message: ai.hasTldr ? 'Direct answers (TL;DR) found.' : 'Missing Atomic Answers.',
+                    message: ai.hasTldr ? 'Möjlig koncis summering hittad.' : 'Saknar tydlig struktur för Atomic Answers.',
                     impact: "High",
-                    recommendation: "Add clear 'TL;DR' / 'Summary' headings with direct answer for the SGE model.",
+                    recommendation: "Ingen koncis summering (ex. TL;DR) identifierades i dokumentets struktur. SGE-modeller prioriterar innehåll där direkta svar enkelt kan extraheras. (Obs: Bedömningen bygger på textheuristik, kräver manuell granskning).",
                     sourceUrl: "https://searchengineland.com/mastering-generative-engine-optimization-in-2026-full-guide-469142"
                 },
                 informationGain: {
                     passed: ai.hasPersonalExperience,
-                    message: ai.hasPersonalExperience ? 'Original research (1st hand) confirmed.' : 'Missing Information Gain (encyclopedia fluff posted).',
+                    message: ai.hasPersonalExperience ? 'Markörer för Information Gain funna.' : 'Låg sannolikhet för Information Gain.',
                     impact: "High",
-                    recommendation: "Google's Discovery prioritizes real experience. Include phrases like 'we tested' or 'our experience'.",
+                    recommendation: "Inga lexikala markörer för förstahandserfarenhet eller unik data identifierades. Texten bör demonstrera faktisk expertis och inte enbart summera befintlig fakta. (Obs: Bedömningen bygger på textheuristik, kräver manuell granskning).",
                     sourceUrl: "https://developers.google.com/search/blog/2026/02/discover-core-update"
                 },
                 llmAccessibility: {
                     passed: hasLlmsTxt,
-                    message: hasLlmsTxt ? 'llms.txt exists in root.' : 'llms.txt missing in origin.',
+                    message: hasLlmsTxt ? 'llms.txt existerar i roten.' : 'llms.txt saknas.',
                     impact: "Low",
-                    recommendation: "Do as with robots.txt; put an llms.txt in the root to instruct new AI crawlers (Perplexity/ChatGPT).",
+                    recommendation: "Placera en llms.txt i domänens rotkatalog för att ge instruktioner till AI-crawlers (ex. Perplexity/OpenAI).",
                     sourceUrl: "https://moz.com/blog/2026-seo-trends-predictions-from-20-experts"
                 },
                 technicalRendering: {
                     passed: ai.domNodesCount <= 1500,
                     domNodes: ai.domNodesCount,
                     scripts: ai.scriptsCount,
-                    message: ai.domNodesCount <= 1500 ? `Page weight (DOM) OK.` : `Page is too script-heavy/deep (${ai.domNodesCount} nodes).`,
+                    message: ai.domNodesCount <= 1500 ? `DOM-storlek OK (${ai.domNodesCount} noder).` : `DOM överstiger rekommenderad gräns (${ai.domNodesCount} noder).`,
                     impact: "Medium",
-                    recommendation: `Slim down DOM nodes to <1500. Speeds up AI Instant Rendering significantly.`,
+                    recommendation: "Reducera antalet DOM-noder till under 1500. En lättviktig struktur påskyndar AI-modellers rendering och extrahering av innehåll.",
                     sourceUrl: "https://developers.google.com/search/docs/appearance/core-web-vitals"
                 }
             }

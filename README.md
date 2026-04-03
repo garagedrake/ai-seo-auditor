@@ -1,35 +1,20 @@
-# SEO Domain Analyzer (2026 Edition) 🕸️✨
+# SEO Domain Analyzer
 
-A standalone, extremely powerful analysis tool written in Node.js to evaluate websites based on tomorrow's (SGE / AI Overviews) search algorithms as well as fundamental on-page ranking factors. The tool has the ability to crawl an entire domain recursively up to 100 subpages and spit out a categorized actionable list in real-time over SSE (Server-Sent Events).
+Ett analysverktyg skrivet i Node.js för utvärdering av webbplatser utifrån teknisk prestanda (Core Web Vitals) och heuristiska markörer för LLM-läsbarhet (SGE/GEO). Verktyget utför en rekursiv genomsökning via Puppeteer och levererar en prioriterad åtgärdslista över SSE.
 
-## 🚀 Features
-* **Recursive Domain Spider:** Enter a crawl depth (e.g., Page + Subpages) and the spider (Puppeteer/BFS) will find internal links and evaluate the entire domain asynchronously.
-* **Master Action Plan:** The final report is not an average; all failed tests from all crawled subpages are combined and sorted by *Critical, Medium or Low* priority. You always know exactly *which* subpage is failing.
-* **Live Terminal:** See logs flowing down the minimalist frontend interface second by second during the analysis.
-* **AI & GEO (Generative Engine Optimization):** Measures technical Core Web Vitals (DOM Bloat) and factors for LLM models such as Information Gain and existing "Atomic Answers" / TL;DR.
-* **Grouped History:** Saves all the tests you have run and builds interactive accordions grouped by domain name to quickly look back at progress.
+## Funktioner
+* **Rekursiv genomsökning:** Utför Breadth-First Search (BFS) utifrån angivet djup för att analysera interna sidor.
+* **Åtgärdsrapport:** Sammanställer tekniska brister och avvikelser i sidstruktur från samtliga genomsökta URL:er, sorterade efter prioritet.
+* **Terminalvy:** Strömmar systemloggar direkt i gränssnittet under körning.
+* **Heuristisk AI-analys:** Utvärderar förekomst av LLM-specifika strukturer (`llms.txt`), DOM-komplexitet samt textuella markörer för "Atomic Answers" och "Information Gain". *Observera att analysen av textinnehåll sker via nyckelordsheuristik och inte genom semantisk utvärdering via externt API.*
+* **Historik:** Sparar tidigare körningar lokalt, grupperade per domän.
 
-## 🛠️ Installation & Start
+## Installation & Körning
 
-### 1. Clone the repo and install
-The environment is primarily driven by `puppeteer` and `express`. Ensure that you have [Node.js](https://nodejs.org/) installed.
+Kräver Node.js.
 
 ```bash
-git clone https://github.com/your-username/ai-seo-auditor.git
+git clone [https://github.com/your-username/ai-seo-auditor.git](https://github.com/your-username/ai-seo-auditor.git)
 cd ai-seo-auditor
 npm install
-```
-
-### 2. Start the background server
-```bash
 node server.js
-```
-
-### 3. Run the analysis
-Open your browser (Chrome, Safari, Firefox etc.) and navigate to the gem:
-**[http://localhost:3000](http://localhost:3000)**
-
-Enter any URL, adjust the limits and press Start Crawling!
-
----
-*Developed as an open-source project to give web developers modern conditions for the search of the future.*
