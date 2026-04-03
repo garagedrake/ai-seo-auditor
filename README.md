@@ -14,7 +14,7 @@ An analysis tool written in Node.js for evaluating websites based on technical p
 Requires Node.js.
 
 ```bash
-git clone [https://github.com/garagedrake/ai-seo-auditor.git](https://github.com/garagedrake/ai-seo-auditor.git)
+git clone https://github.com/garagedrake/ai-seo-auditor.git
 cd ai-seo-auditor
 npm install
 node server.js
